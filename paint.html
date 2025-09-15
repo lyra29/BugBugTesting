@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creative Studio - Paint App</title>
+  <link rel="stylesheet" href="paint.css">
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <div class="paint-container">
+        <div class="paint-header">
+            <h2>🎨 Creative Studio</h2>
+            <p>Express your creativity with our drawing tools</p>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="paint" width="800" height="500"></canvas>
+            
+            <div class="toolbar">
+                <div class="tool-group">
+                    <label>Brush Color</label>
+                    <div class="color-palette">
+                        <div class="color-option active" style="background-color: #ff0000;" data-color="#ff0000"></div>
+                        <div class="color-option" style="background-color: #0000ff;" data-color="#0000ff"></div>
+                        <div class="color-option" style="background-color: #00ff00;" data-color="#00ff00"></div>
+                        <div class="color-option" style="background-color: #ffff00;" data-color="#ffff00"></div>
+                        <div class="color-option" style="background-color: #000000;" data-color="#000000"></div>
+                        <div class="color-option" style="background-color: #ffffff;" data-color="#ffffff"></div>
+                    </div>
+                </div>
+                
+                <div class="tool-group">
+                    <label for="brushSize">Brush Size</label>
+                    <input type="range" id="brushSize" min="1" max="50" value="5">
+                    <span id="brushSizeValue">5px</span>
+                </div>
+                
+                <div class="tool-group">
+                    <label>Tools</label>
+                    <div class="actions">
+                        <button id="clearBtn" class="btn btn-secondary">Clear Canvas</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button id="saveBtn" class="btn btn-primary">Save Drawing</button>
+                <button id="newBtn" class="btn btn-secondary">New Drawing</button>
+            </div>
+        </div>
+        
+        <div class="back-btn">
+            <a href="index.html">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.width = Math.random() * 6 + 4 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        const canvas = document.getElementById("paint");
+        const ctx = canvas.getContext("2d");
+        
+        // Set canvas background to white
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        let painting = false;
+        let brushColor = "#ff0000";
+        let brushSize = 5;
+        
+        function startPosition(e) {
+            painting = true;
+            draw(e);
+        }
+        
+        function endPosition() {
+            painting = false;
+            ctx.beginPath(); // stops connecting lines
+        }
+        
+        function draw(e) {
+            if (!painting) return;
+            
+            ctx.lineWidth = brushSize;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = brushColor;
+            
+            // Handle both mouse and touch events
+            let x, y;
+            if (e.type.includes('touch')) {
+                x = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+                y = e.touches[0].clientY - canvas.getBoundingClientRect().top;
+            } else {
+                x = e.offsetX;
+                y = e.offsetY;
+            }
+            
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+        
+        // Event listeners for mouse
+        canvas.addEventListener("mousedown", startPosition);
+        canvas.addEventListener("mouseup", endPosition);
+        canvas.addEventListener("mousemove", draw);
+        
+        // Event listeners for touch
+        canvas.addEventListener("touchstart", startPosition);
+        canvas.addEventListener("touchend", endPosition);
+        canvas.addEventListener("touchmove", draw);
+        
+        // Color selection
+        document.querySelectorAll('.color-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.color-option').forEach(opt => {
+                    opt.classList.remove('active');
+                });
+                this.classList.add('active');
+                brushColor = this.getAttribute('data-color');
+            });
+        });
+        
+        // Brush size
+        const brushSizeSlider = document.getElementById('brushSize');
+        const brushSizeValue = document.getElementById('brushSizeValue');
+        
+        brushSizeSlider.addEventListener('input', function() {
+            brushSize = this.value;
+            brushSizeValue.textContent = brushSize + 'px';
+        });
+        
+        // Clear canvas
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear the canvas?')) {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        });
+        
+        // New drawing
+        document.getElementById('newBtn').addEventListener('click', function() {
+            if (confirm('Start a new drawing? Current work will be lost.')) {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        });
+        
+        // Save drawing
+        document.getElementById('saveBtn').addEventListener('click', function() {
+            const image = canvas.toDataURL("image/png");
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = 'my-drawing.png';
+            link.click();
+        });
+        
+        // Initialize particles
+        createParticles();
+        
+        // Prevent scrolling when touching the canvas
+        document.body.addEventListener("touchstart", function(e) {
+            if (e.target == canvas) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        document.body.addEventListener("touchend", function(e) {
+            if (e.target == canvas) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        document.body.addEventListener("touchmove", function(e) {
+            if (e.target == canvas) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>
